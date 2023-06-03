@@ -1,0 +1,23 @@
+[ ] Rower Renowacja due:2023-06-21
+    [ ] Dopompować kółka prio:M due:2023-06-11
+    [X] Kupić dzwonek
+    [ ] prio:W Kupić koraliki na szprychy
+    [ ] Wymienić siodełko
+        [ ] Zrobić zestawienie dostępnych siodełek na rynku
+            [ ] Sprawdzić siodełka w hipermarkecie due:2023-05-29
+            [ ] Sprawidzić siodełka w osiedlowym prio:S
+            [X] Sprawdzić siodełka na giełdzie
+    [ ] Podwyższyć siodełko prio:C due:2023-06-02
+[ ] Kuchenne Przygody
+    [ ] Konfitury
+        [ ] Konfitury truskawkowe prio:M due 2023-06-14
+        [ ] Konfa agrestowa prio:C
+[ ] Książki
+    [X] Wycieczka do antykwariatu, aby uspokoić mysli przeróżne
+    [ ] Sprzedaj niepotrzebne książki w antykwa
+        [ ] Przygotuj listę książek niepotrzebnych, czyli do sprzedania
+    [ ] Przygotować się do wizyty w bibliotece
+        [ ] Jakie książki chce wypożyczyć prio:S
+        [ ] Przygotować 2,40zł na spłacenie kary prio:M
+[ ] Spiżarenka
+    [ ] Uzypełnić zapasy herbatników prio:C
