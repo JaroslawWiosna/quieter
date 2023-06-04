@@ -403,12 +403,14 @@ int main(int argc, char **argv) {
 
     const std::string header_title_id = "ID";
     const std::string header_title_prio = "P";
+    const std::string header_title_deps = "Deps";
     const std::string header_title_dl = "Due";
     const std::string header_title_desc = "Description";
     const std::string header_title_urg = "Urgency";
 
     int id_mx_width = header_title_id.size();
     int prio_mx_width = header_title_prio.size();
+    int deps_mx_width = header_title_deps.size();
     int dl_mx_width = header_title_dl.size();
     int desc_mx_width = header_title_desc.size();
     int urg_mx_width = header_title_urg.size();
@@ -425,6 +427,17 @@ int main(int argc, char **argv) {
             int width = to_string(task.prio).size();
             if (width > prio_mx_width) {
                 prio_mx_width = width;
+            }
+        }
+        if (task.children.size() > 0) {
+            std::string deps{}; // task depends on its children, aka subtasks
+            for (const auto &child : task.children) {
+                deps += std::to_string(child);
+                deps += ", ";
+            }
+            int width = deps.size();
+            if (width > deps_mx_width) {
+                deps_mx_width = width;
             }
         }
         if (task.has_dl) {
@@ -458,6 +471,8 @@ int main(int argc, char **argv) {
     std::cout << ' ';
     pad_print(header_title_prio, prio_mx_width);
     std::cout << ' ';
+    pad_print(header_title_deps, deps_mx_width);
+    std::cout << ' ';
     pad_print(header_title_dl, dl_mx_width);
     std::cout << ' ';
     pad_print_right(header_title_desc, desc_mx_width);
@@ -473,6 +488,20 @@ int main(int argc, char **argv) {
             pad_print(std::string{to_string(task.prio)}, prio_mx_width);
         } else {
             pad_print({"---"}, prio_mx_width);
+        }
+        std::cout << ' ';
+        {
+            std::string deps{}; // task depends on its children, aka subtasks
+            for (const auto &child : task.children) {
+                deps += std::to_string(child);
+                deps += ", ";
+            }
+            if (deps.size() > 0) {
+                // remove last `, `
+                deps.pop_back(); 
+                deps.pop_back();
+            }
+            pad_print(deps, deps_mx_width);
         }
         std::cout << ' ';
         if (task.has_dl) {
