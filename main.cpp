@@ -9,6 +9,20 @@
 #include <iomanip>
 #include <optional>
 
+// https://stackoverflow.com/a/23370070 for w.ws_row from struct winsize w;
+#include <sys/ioctl.h>
+#include <stdio.h>
+#include <unistd.h>
+
+static int get_width_of_terminal() {
+    struct winsize w;
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+
+    // printf ("lines %d\n", w.ws_row);
+    // printf ("columns %d\n", w.ws_col);
+    return w.ws_col;
+}
+
 std::string castPolishLettersToASCII(const std::string& str) {
     std::string result = str;
     
@@ -466,7 +480,9 @@ int main(int argc, char **argv) {
     //prio_mx_width = 1;
     //desc_mx_width += 4;
     //desc_mx_width = 20;
-        
+
+    desc_mx_width = get_width_of_terminal() - id_mx_width - 1 - prio_mx_width - 1 - deps_mx_width - 1 - dl_mx_width - 1 - urg_mx_width - 1;
+
     pad_print(header_title_id, id_mx_width);
     std::cout << ' ';
     pad_print(header_title_prio, prio_mx_width);
@@ -479,6 +495,7 @@ int main(int argc, char **argv) {
     std::cout << ' ';
     pad_print(header_title_urg, urg_mx_width);
     
+
     std::cout << std::endl;
     for (const auto &task : tasks) {
         pad_print(trim_copy(std::to_string(task.id)), id_mx_width);
