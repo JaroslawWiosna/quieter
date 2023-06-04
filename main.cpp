@@ -401,17 +401,26 @@ int main(int argc, char **argv) {
     //////////////////////
     sort(tasks.begin(), tasks.end(), asc_pred);
 
+    const std::string header_title_id = "ID";
     const std::string header_title_prio = "P";
     const std::string header_title_dl = "Due";
     const std::string header_title_desc = "Description";
     const std::string header_title_urg = "Urgency";
 
+    int id_mx_width = header_title_id.size();
     int prio_mx_width = header_title_prio.size();
     int dl_mx_width = header_title_dl.size();
     int desc_mx_width = header_title_desc.size();
     int urg_mx_width = header_title_urg.size();
 
     for (const auto &task : tasks) {
+        {
+            int width = std::to_string(task.id).size();
+            if (width > id_mx_width) {
+                id_mx_width = width;
+            }
+        }
+
         if (Priority::NOT_SPECIFIED != task.prio) {
             int width = to_string(task.prio).size();
             if (width > prio_mx_width) {
@@ -445,6 +454,8 @@ int main(int argc, char **argv) {
     //desc_mx_width += 4;
     //desc_mx_width = 20;
         
+    pad_print(header_title_id, id_mx_width);
+    std::cout << ' ';
     pad_print(header_title_prio, prio_mx_width);
     std::cout << ' ';
     pad_print(header_title_dl, dl_mx_width);
@@ -455,6 +466,9 @@ int main(int argc, char **argv) {
     
     std::cout << std::endl;
     for (const auto &task : tasks) {
+        pad_print(trim_copy(std::to_string(task.id)), id_mx_width);
+        std::cout << ' ';
+
         if (task.prio != Priority::NOT_SPECIFIED) {
             pad_print(std::string{to_string(task.prio)}, prio_mx_width);
         } else {
