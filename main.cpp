@@ -8,6 +8,10 @@
 #include <sstream>
 #include <iomanip>
 #include <optional>
+#include <map>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 // https://stackoverflow.com/a/23370070 for w.ws_row from struct winsize w;
 #include <sys/ioctl.h>
@@ -329,12 +333,12 @@ std::optional<Id> get_most_recent_id_of_given_indent(int indent) {
     return {};
 }
 
-void parse_file_to_tasks(std::string filepath) {
+int id{}; // od zera bo jestesmy programystami
+void parse_file_to_tasks(fs::path filepath) {
     std::ifstream databook_file{filepath};
 
     Task task{};
     std::string line;
-    int id{0}; // od zera bo jestesmy programystami
     task.id = id++;
     while (std::getline(databook_file, line)) {
         {
@@ -385,56 +389,92 @@ void parse_file_to_tasks(std::string filepath) {
         task = Task{};
         task.id = id++;
     }
-    
-
 }
 
-int main(int argc, char **argv) {
-    std::string program = argv[0];
-    
-    if (argc <= 0) {
-        std::cerr 
-            << "Usage: " 
-            << program 
-            << "[datebook.txt]"
-            << std::endl
-            << "ERROR: no datebook is provided"
-            << std::endl;
-        return(1);
+void parse_dir_to_tasks(fs::path dirpath) {
+    for(const auto& entry : fs::directory_iterator(dirpath)) {
+        if (fs::is_regular_file(entry)) {
+            parse_file_to_tasks(entry);
+        }
     }
-    assert(argc >= 1);
-    std::string datebook_filepath = argv[1];
-    parse_file_to_tasks(datebook_filepath);
+}
 
-    //////////////////////
-    sort(tasks.begin(), tasks.end(), asc_pred);
+enum class Title {
+    id,
+    prio,
+    deps,
+    dl,
+    desc,
+    urg,
+};
 
-    const std::string header_title_id = "ID";
-    const std::string header_title_prio = "P";
-    const std::string header_title_deps = "Deps";
-    const std::string header_title_dl = "Due";
-    const std::string header_title_desc = "Description";
-    const std::string header_title_urg = "Urgency";
+std::string to_string(Title title) {
+    switch(title) {
+        case Title::id:
+            return "ID";
+        case Title::prio:
+            return "P";
+        case Title::deps:
+            return "Deps";
+        case Title::dl:
+            return "Due";
+        case Title::desc:
+            return "Description";
+        case Title::urg:
+            return "Urgency";
+        default:
+            throw;
+    }
+    throw;
+}
 
-    int id_mx_width = header_title_id.size();
-    int prio_mx_width = header_title_prio.size();
-    int deps_mx_width = header_title_deps.size();
-    int dl_mx_width = header_title_dl.size();
-    int desc_mx_width = header_title_desc.size();
-    int urg_mx_width = header_title_urg.size();
+using Entries = std::vector<std::string>;
+
+struct Column_Of_Table {
+    Title title;
+    long unsigned int width;
+};
+
+using Columns = std::map<Title, Column_Of_Table>;
+
+struct Output_Table {
+    Columns cols;
+};
+
+Output_Table tasks_to_output_table() {
+#if 0
+    Output_Table res{
+        Columns{
+            Column_Of_Table{Title::id, Title::id.size(), {}},
+            Column_Of_Table{Title::prio, Title::prio.size(), {}},
+            Column_Of_Table{Title::deps, Title::deps.size(), {}},
+            Column_Of_Table{Title::dl, Title::dl.size(), {}},
+            Column_Of_Table{Title::desc, Title::desc.size(), {}},
+            Column_Of_Table{Title::urg, Title::urg.size(), {}},
+        }
+    };
+#endif
+    Output_Table res{};
+    res.cols[Title::id] = Column_Of_Table{Title::id, to_string(Title::id).size()};
+    res.cols[Title::prio] = Column_Of_Table{Title::prio, to_string(Title::prio).size()};
+    res.cols[Title::deps] = {Title::deps, to_string(Title::deps).size()};
+    res.cols[Title::dl] = {Title::dl, to_string(Title::dl).size()};
+    res.cols[Title::desc] = {Title::desc, to_string(Title::desc).size()};
+    res.cols[Title::urg] = {Title::urg, to_string(Title::urg).size()};
 
     for (const auto &task : tasks) {
         {
-            int width = std::to_string(task.id).size();
-            if (width > id_mx_width) {
-                id_mx_width = width;
+
+            long unsigned int width = std::to_string(task.id).size();
+            if (width > res.cols[Title::id].width) {
+                res.cols[Title::id].width = width;
             }
         }
 
         if (Priority::NOT_SPECIFIED != task.prio) {
-            int width = to_string(task.prio).size();
-            if (width > prio_mx_width) {
-                prio_mx_width = width;
+            long unsigned int width = to_string(task.prio).size();
+            if (width > res.cols[Title::prio].width) {
+                res.cols[Title::prio].width = width;
             }
         }
         if (task.children.size() > 0) {
@@ -443,62 +483,61 @@ int main(int argc, char **argv) {
                 deps += std::to_string(child);
                 deps += ", ";
             }
-            int width = deps.size();
-            if (width > deps_mx_width) {
-                deps_mx_width = width;
+            long unsigned int width = deps.size();
+            if (width > res.cols[Title::deps].width) {
+                res.cols[Title::deps].width = width;
             }
         }
         if (task.has_dl) {
-            int width = std::to_string(task.dl).size();
-            if (width > dl_mx_width) {
-                dl_mx_width = width;
+            long unsigned int width = std::to_string(task.dl).size();
+            if (width > res.cols[Title::dl].width) {
+                res.cols[Title::dl].width = width;
             }
         }
         {
-            int width = task.desc.size();
-    //        std::cout << "width = " << width << ' ' << task.desc << '\n';
-            if (width > desc_mx_width) {
-                desc_mx_width = width;
+            long unsigned int width = task.desc.size();
+            if (width > res.cols[Title::desc].width) {
+                res.cols[Title::desc].width = width;
             }
         }
         {
             std::stringstream stream;
             stream << std::fixed << std::setprecision(1) << urgency(task);
-            int width = stream.str().size();
-            if (width > urg_mx_width) {
-                urg_mx_width = width;
+            long unsigned int width = stream.str().size();
+            if (width > res.cols[Title::urg].width) {
+                res.cols[Title::urg].width = width;
             }
         }
     }
-    
-    //prio_mx_width = 1;
-    //desc_mx_width += 4;
-    //desc_mx_width = 20;
+    return res;
+}   
 
-    desc_mx_width = get_width_of_terminal() - id_mx_width - 1 - prio_mx_width - 1 - deps_mx_width - 1 - dl_mx_width - 1 - urg_mx_width - 1;
+void print_table(Output_Table table) {
 
-    pad_print(header_title_id, id_mx_width);
-    std::cout << ' ';
-    pad_print(header_title_prio, prio_mx_width);
-    std::cout << ' ';
-    pad_print(header_title_deps, deps_mx_width);
-    std::cout << ' ';
-    pad_print(header_title_dl, dl_mx_width);
-    std::cout << ' ';
-    pad_print_right(header_title_desc, desc_mx_width);
-    std::cout << ' ';
-    pad_print(header_title_urg, urg_mx_width);
-    
+    table.cols[Title::desc].width = get_width_of_terminal() - table.cols[Title::id].width - 1 - table.cols[Title::prio].width - 1 - table.cols[Title::deps].width - 1 - table.cols[Title::dl].width - 1 - table.cols[Title::urg].width - 4;
 
-    std::cout << std::endl;
+    pad_print(to_string(Title::id), table.cols[Title::id].width);
+    std::cout << ' ';
+    pad_print(to_string(Title::prio), table.cols[Title::prio].width);
+    std::cout << ' ';
+    pad_print(to_string(Title::deps), table.cols[Title::deps].width);
+    std::cout << ' ';
+    pad_print(to_string(Title::dl), table.cols[Title::dl].width);
+    std::cout << ' ';
+    pad_print(to_string(Title::desc), table.cols[Title::desc].width);
+    std::cout << ' ';
+    pad_print(to_string(Title::urg), table.cols[Title::urg].width);    
+    std::cout << '\n';
+
+
     for (const auto &task : tasks) {
-        pad_print(trim_copy(std::to_string(task.id)), id_mx_width);
+        pad_print(trim_copy(std::to_string(task.id)), table.cols[Title::id].width);
         std::cout << ' ';
 
         if (task.prio != Priority::NOT_SPECIFIED) {
-            pad_print(std::string{to_string(task.prio)}, prio_mx_width);
+            pad_print(std::string{to_string(task.prio)}, table.cols[Title::prio].width);
         } else {
-            pad_print({"---"}, prio_mx_width);
+            pad_print({"---"}, table.cols[Title::prio].width);
         }
         std::cout << ' ';
         {
@@ -512,21 +551,21 @@ int main(int argc, char **argv) {
                 deps.pop_back(); 
                 deps.pop_back();
             }
-            pad_print(deps, deps_mx_width);
+            pad_print(deps, table.cols[Title::deps].width);
         }
         std::cout << ' ';
         if (task.has_dl) {
-            pad_print(std::to_string(task.dl), dl_mx_width);
+            pad_print(std::to_string(task.dl), table.cols[Title::dl].width);
         } else {
-            pad_print({}, dl_mx_width);
+            pad_print({}, table.cols[Title::dl].width);
         }
         std::cout << ' ';
-        pad_print_right(trim_copy(task.desc), desc_mx_width);
+        pad_print_right(trim_copy(task.desc), table.cols[Title::desc].width);
         std::cout << ' ';
         {
             std::stringstream stream;
             stream << std::fixed << std::setprecision(1) << urgency(task);
-            pad_print(stream.str(), urg_mx_width);
+            pad_print(stream.str(), table.cols[Title::urg].width);
         }
 #if 0
         std::cout << "\t\t";
@@ -536,4 +575,40 @@ int main(int argc, char **argv) {
 #endif
         std::cout << std::endl;
     }
+}
+
+int main(int argc, char **argv) {
+    std::string program = argv[0];
+    
+    if (argc <= 0) {
+        std::cerr 
+            << "Usage: " 
+            << program 
+            << "[datebook.txt|directory_full_of_datebooks]"
+            << std::endl
+            << "ERROR: neither datebook nor directory is provided"
+            << std::endl;
+        return(1);
+    }
+    assert(argc >= 1);
+    std::string path = argv[1];
+    if (fs::is_regular_file(path)) {
+        parse_file_to_tasks(path);
+    } else if (fs::is_directory(path)) {
+        parse_dir_to_tasks(path);
+    } else {
+        std::cerr 
+            << "Usage: " 
+            << program 
+            << "[datebook.txt|directory_full_of_datebooks]"
+            << std::endl
+            << "ERROR: neither datebook nor directory is provided"
+            << std::endl;
+        return(1);
+    }
+
+    //////////////////////
+    sort(tasks.begin(), tasks.end(), asc_pred);
+    auto table = tasks_to_output_table();
+    print_table(table);
 }

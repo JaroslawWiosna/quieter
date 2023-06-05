@@ -1,7 +1,7 @@
 set -xe
 
 CXXFLAGS="-std=c++17 -ggdb3 -O0 -Wall -Wextra -pedantic -I./3rd_party/"
-LIBS=""
+LIBS="-lstdc++fs"
 
-g++ $CXXFLAGS -o quieter main.cpp $LIBS
+$CXX $CXXFLAGS -o quieter main.cpp $LIBS
 
