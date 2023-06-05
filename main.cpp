@@ -329,23 +329,8 @@ std::optional<Id> get_most_recent_id_of_given_indent(int indent) {
     return {};
 }
 
-int main(int argc, char **argv) {
-    std::string program = argv[0];
-    
-    if (argc <= 0) {
-        std::cerr 
-            << "Usage: " 
-            << program 
-            << "[datebook.txt]"
-            << std::endl
-            << "ERROR: no datebook is provided"
-            << std::endl;
-        return(1);
-    }
-    assert(argc >= 1);
-    std::string datebook_filepath = argv[1];
-
-    std::ifstream databook_file{datebook_filepath};
+void parse_file_to_tasks(std::string filepath) {
+    std::ifstream databook_file{filepath};
 
     Task task{};
     std::string line;
@@ -380,17 +365,6 @@ int main(int argc, char **argv) {
                 trim(line);
             }
         }
-#if 0
-        if (has_prefix(line, "[ ]")) {
-            if (task.lines.size() > 0) {
-                tasks.push_back(task);
-                task = Task{};
-            }
-        } else if (has_prefix(line, "[X]")) {
-            continue;
-        } else {
-        }
-#endif       
         const auto scrapped_due = scrap_due(line);
         if (scrapped_due.has_value()) {
             task.has_dl = true;
@@ -412,6 +386,26 @@ int main(int argc, char **argv) {
         task.id = id++;
     }
     
+
+}
+
+int main(int argc, char **argv) {
+    std::string program = argv[0];
+    
+    if (argc <= 0) {
+        std::cerr 
+            << "Usage: " 
+            << program 
+            << "[datebook.txt]"
+            << std::endl
+            << "ERROR: no datebook is provided"
+            << std::endl;
+        return(1);
+    }
+    assert(argc >= 1);
+    std::string datebook_filepath = argv[1];
+    parse_file_to_tasks(datebook_filepath);
+
     //////////////////////
     sort(tasks.begin(), tasks.end(), asc_pred);
 
