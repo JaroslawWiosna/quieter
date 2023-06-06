@@ -170,7 +170,7 @@ float urgency_coefficient_prio(Priority p) {
         case Priority::COULD:
             return 1.8f;
         case Priority::WONT:
-            return 0.1f;
+            return -3.9f;
         default:
             throw;
     } 
