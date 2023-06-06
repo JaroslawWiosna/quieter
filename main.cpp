@@ -210,6 +210,7 @@ struct Task {
     std::optional<Id> parent;
     Ids children;
     int indent;
+    fs::path file;
 };
 
 using Tasks = std::vector<Task>;
@@ -330,6 +331,7 @@ std::optional<Id> get_most_recent_id_of_given_indent(int indent) {
             return rit->id;
         }
     }
+    assert(!"unreachable");
     return {};
 }
 
@@ -338,6 +340,7 @@ void parse_file_to_tasks(fs::path filepath) {
     std::ifstream databook_file{filepath};
 
     Task task{};
+    task.file = filepath;
     std::string line;
     task.id = id++;
     while (std::getline(databook_file, line)) {
@@ -357,6 +360,7 @@ void parse_file_to_tasks(fs::path filepath) {
                 if (task.lines.size() > 0) {
                     tasks.push_back(task);
                     task = Task{};
+                    task.file = filepath;
                     task.id = id++;
                 }
                 assert(pos % 4 == 0);
@@ -387,6 +391,7 @@ void parse_file_to_tasks(fs::path filepath) {
     if (task.lines.size() > 0) {
         tasks.push_back(task);
         task = Task{};
+        task.file = filepath;
         task.id = id++;
     }
 }
@@ -405,6 +410,7 @@ enum class Title {
     deps,
     dl,
     desc,
+    file,
     urg,
 };
 
@@ -420,8 +426,10 @@ std::string to_string(Title title) {
             return "Due";
         case Title::desc:
             return "Description";
+        case Title::file:
+            return "Filename";
         case Title::urg:
-            return "Urgency";
+            return "Urg";
         default:
             throw;
     }
@@ -442,24 +450,13 @@ struct Output_Table {
 };
 
 Output_Table tasks_to_output_table() {
-#if 0
-    Output_Table res{
-        Columns{
-            Column_Of_Table{Title::id, Title::id.size(), {}},
-            Column_Of_Table{Title::prio, Title::prio.size(), {}},
-            Column_Of_Table{Title::deps, Title::deps.size(), {}},
-            Column_Of_Table{Title::dl, Title::dl.size(), {}},
-            Column_Of_Table{Title::desc, Title::desc.size(), {}},
-            Column_Of_Table{Title::urg, Title::urg.size(), {}},
-        }
-    };
-#endif
     Output_Table res{};
     res.cols[Title::id] = Column_Of_Table{Title::id, to_string(Title::id).size()};
     res.cols[Title::prio] = Column_Of_Table{Title::prio, to_string(Title::prio).size()};
     res.cols[Title::deps] = {Title::deps, to_string(Title::deps).size()};
     res.cols[Title::dl] = {Title::dl, to_string(Title::dl).size()};
     res.cols[Title::desc] = {Title::desc, to_string(Title::desc).size()};
+    res.cols[Title::file] = {Title::file, to_string(Title::file).size()};
     res.cols[Title::urg] = {Title::urg, to_string(Title::urg).size()};
 
     for (const auto &task : tasks) {
@@ -500,6 +497,12 @@ Output_Table tasks_to_output_table() {
                 res.cols[Title::desc].width = width;
             }
         }
+        {            
+            long unsigned int width = std::string{task.file.stem()}.size();
+            if (width > res.cols[Title::file].width) {
+                res.cols[Title::file].width = width;
+            }
+        }
         {
             std::stringstream stream;
             stream << std::fixed << std::setprecision(1) << urgency(task);
@@ -514,7 +517,7 @@ Output_Table tasks_to_output_table() {
 
 void print_table(Output_Table table) {
 
-    table.cols[Title::desc].width = get_width_of_terminal() - table.cols[Title::id].width - 1 - table.cols[Title::prio].width - 1 - table.cols[Title::deps].width - 1 - table.cols[Title::dl].width - 1 - table.cols[Title::urg].width - 4;
+    table.cols[Title::desc].width = get_width_of_terminal() - table.cols[Title::id].width - 1 - table.cols[Title::prio].width - 1 - table.cols[Title::deps].width - 1 - table.cols[Title::dl].width - 1 - table.cols[Title::file].width - 1 - table.cols[Title::urg].width - 4;
 
     pad_print(to_string(Title::id), table.cols[Title::id].width);
     std::cout << ' ';
@@ -525,6 +528,8 @@ void print_table(Output_Table table) {
     pad_print(to_string(Title::dl), table.cols[Title::dl].width);
     std::cout << ' ';
     pad_print_right(to_string(Title::desc), table.cols[Title::desc].width);
+    std::cout << ' ';
+    pad_print(to_string(Title::file), table.cols[Title::file].width);    
     std::cout << ' ';
     pad_print(to_string(Title::urg), table.cols[Title::urg].width);    
     std::cout << '\n';
@@ -562,6 +567,8 @@ void print_table(Output_Table table) {
         std::cout << ' ';
         pad_print_right(trim_copy(task.desc), table.cols[Title::desc].width);
         std::cout << ' ';
+        pad_print(trim_copy(task.file.stem()), table.cols[Title::file].width);
+        std::cout << ' ';
         {
             std::stringstream stream;
             stream << std::fixed << std::setprecision(1) << urgency(task);
@@ -590,7 +597,7 @@ int main(int argc, char **argv) {
             << std::endl;
         return(1);
     }
-    assert(argc >= 1);
+ //   assert(argc >= 2);
     std::string path = argv[1];
     if (fs::is_regular_file(path)) {
         parse_file_to_tasks(path);
