@@ -524,7 +524,7 @@ void print_table(Output_Table table) {
     std::cout << ' ';
     pad_print(to_string(Title::dl), table.cols[Title::dl].width);
     std::cout << ' ';
-    pad_print(to_string(Title::desc), table.cols[Title::desc].width);
+    pad_print_right(to_string(Title::desc), table.cols[Title::desc].width);
     std::cout << ' ';
     pad_print(to_string(Title::urg), table.cols[Title::urg].width);    
     std::cout << '\n';
@@ -537,7 +537,7 @@ void print_table(Output_Table table) {
         if (task.prio != Priority::NOT_SPECIFIED) {
             pad_print(std::string{to_string(task.prio)}, table.cols[Title::prio].width);
         } else {
-            pad_print({"---"}, table.cols[Title::prio].width);
+            pad_print({}, table.cols[Title::prio].width);
         }
         std::cout << ' ';
         {
