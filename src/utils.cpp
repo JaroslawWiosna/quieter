@@ -11,8 +11,6 @@
 #include <map>
 #include <filesystem>
 
-namespace fs = std::filesystem;
-
 // https://stackoverflow.com/a/23370070 for w.ws_row from struct winsize w;
 #include <sys/ioctl.h>
 #include <stdio.h>

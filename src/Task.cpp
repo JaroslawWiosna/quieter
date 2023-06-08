@@ -1,12 +1,3 @@
-enum class Priority {
-    NOT_SPECIFIED = 0,
-    MUST,
-    SHOULD,
-    COULD,
-    WONT,
-    COUNT
-};
-static_assert(static_cast<int>(Priority::COUNT) == 5);
 
 std::string to_string(Priority p) {
     switch(p) {
@@ -59,25 +50,6 @@ float urgency_due(int days) {
 
 ////////////////////////////////////////////////////////////////////////
 
-using Day = int;
-using Id = int;
-using Ids = std::vector<Id>;
-
-struct Task {
-    std::vector<std::string> lines;
-    bool has_dl;
-    Day dl; // deadline
-    Priority prio;
-    std::string desc;
-    Id id{};
-    std::optional<Id> parent;
-    Ids children;
-    int indent;
-    fs::path file;
-};
-
-using Tasks = std::vector<Task>;
-
 float urgency(Task task) {
     float result{};
     if (task.has_dl) {
@@ -101,8 +73,6 @@ float urgency(Task task) {
 bool has_prefix(std::string s, std::string prefix) {
     return (s.compare(0, prefix.size(), prefix) == 0);
 }
-
-Tasks tasks;
 
 int diff_in_days(std::string s) {
     time_t t = time(NULL);
@@ -149,7 +119,6 @@ Priority scrap_prio(std::string &s) {
     return Priority::NOT_SPECIFIED;
 }
 
-const std::string keyword_due{"due:"};
 std::optional<Day> scrap_due(std::string &s) {
     const auto pos = s.find(keyword_due);
     if (std::string::npos != pos) {
@@ -159,9 +128,6 @@ std::optional<Day> scrap_due(std::string &s) {
     }
     return {}; 
 }
-
-// TODO(#1): Don't allow multiple occurences of `[` and `]`
-// This should be reserved only for `[ ]` and `[X]`
 
 //print w/ padding
 void pad_print_left(std::string s, long unsigned int pad, char chr = ' ') {
@@ -196,7 +162,6 @@ std::optional<Id> get_most_recent_id_of_given_indent(int indent) {
     return {};
 }
 
-int id{}; // od zera bo jestesmy programystami
 void parse_file_to_tasks(fs::path filepath) {
     std::ifstream databook_file{filepath};
 
@@ -262,17 +227,6 @@ void parse_dir_to_tasks(fs::path dirpath) {
     }
 }
 
-enum class Title {
-    ID,
-    PRIO,
-    PARENT,
-    DEPS,
-    DL,
-    DESC,   
-    FILENAME,
-    URG,
-};
-
 std::string to_string(Title title) {
     switch(title) {
         case Title::ID:
@@ -297,16 +251,23 @@ std::string to_string(Title title) {
     throw;
 }
 
-using Width = long unsigned int;
-using Columns = std::map<Title, Width>;
+Width calc_width_of_desc(Table &table, const Opts &opts) {
+    Width max = opts.table_width_set_via_argv.value_or(get_width_of_terminal());
+    Width others = table.cols[Title::ID] + 1 + table.cols[Title::PRIO] + 1 + table.cols[Title::PARENT] + 1 + table.cols[Title::DEPS] + 1 + table.cols[Title::DL] + 1 + table.cols[Title::FILENAME] + 1 + table.cols[Title::URG] + 4;
 
-struct Table {
-    Columns cols;
-    Width width;
-};
-
-Width calc_width_of_desc(Table &table) {
-    return get_width_of_terminal() - table.cols[Title::ID] - 1 - table.cols[Title::PRIO] - 1 - table.cols[Title::PARENT] - 1 - table.cols[Title::DEPS] - 1 - table.cols[Title::DL] - 1 - table.cols[Title::FILENAME] - 1 - table.cols[Title::URG] - 4;
+    if (others >= max) {
+        std::cerr 
+            << "Usage: " 
+            << opts.program 
+            << " [datebook.txt|directory_full_of_datebooks] [--width=NUMBER]"
+            << std::endl
+            << "ERROR: your NUMBER("
+            << opts.table_width_set_via_argv.value()
+            << ") is too small, so I cannot render table" 
+            << std::endl;
+        exit(1);
+    }
+    return max - others;
 }
 
 Table tasks_to_output_table() {
@@ -382,11 +343,11 @@ Table tasks_to_output_table() {
     return res;
 }   
 
-void print_table(Table table) {
+void print_table(Table table, const Opts &opts) {
 
     // table.cols[Title::PARENT] = 3;
 
-    table.cols[Title::DESC] = calc_width_of_desc(table);
+    table.cols[Title::DESC] = calc_width_of_desc(table, opts);
     
     pad_print(to_string(Title::ID), table.cols[Title::ID]);
     std::cout << ' ';

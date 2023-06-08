@@ -1,29 +1,17 @@
 int main(int argc, char **argv) {
-    std::string program = argv[0];
-    if (argc <= 0) {
-        std::cerr 
-            << "Usage: " 
-            << program 
-            << "[datebook.txt|directory_full_of_datebooks]"
-            << std::endl
-            << "ERROR: neither datebook nor directory is provided"
-            << std::endl;
-        return(1);
-    }
- //   assert(argc >= 2);
-    std::string path = argv[1];
+    Opts opts = args_to_opts(parse_argv(argc, argv));
 
-    if (fs::is_regular_file(path)) {
-        parse_file_to_tasks(path);
-    } else if (fs::is_directory(path)) {
-        parse_dir_to_tasks(path);
+    if (fs::is_regular_file(opts.path)) {
+        parse_file_to_tasks(opts.path);
+    } else if (fs::is_directory(opts.path)) {
+        parse_dir_to_tasks(opts.path);
     } else {
         std::cerr 
             << "Usage: " 
-            << program 
+            << opts.program 
             << "[datebook.txt|directory_full_of_datebooks]"
             << std::endl
-            << "ERROR: neither datebook nor directory is provided"
+            << "ERROR: path is not datebook/directory"
             << std::endl;
         return(1);
     }
@@ -31,5 +19,5 @@ int main(int argc, char **argv) {
     //////////////////////
     sort(tasks.begin(), tasks.end(), asc_pred);
     auto table = tasks_to_output_table();
-    print_table(table);
+    print_table(table, opts);
 }
