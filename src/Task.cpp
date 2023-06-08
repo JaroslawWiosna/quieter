@@ -299,49 +299,48 @@ std::string to_string(Title title) {
     throw;
 }
 
-using Entries = std::vector<std::string>;
+using Width = long unsigned int;
+using Columns = std::map<Title, Width>;
 
-struct Column_Of_Table {
-    Title title;
-    long unsigned int width;
-};
-
-using Columns = std::map<Title, Column_Of_Table>;
-
-struct Output_Table {
+struct Table {
     Columns cols;
+    Width width;
 };
 
-Output_Table tasks_to_output_table() {
-    Output_Table res{};
-    res.cols[Title::ID] = Column_Of_Table{Title::ID, to_string(Title::ID).size()};
-    res.cols[Title::PRIO] = Column_Of_Table{Title::PRIO, to_string(Title::PRIO).size()};
-    res.cols[Title::PARENT] = {Title::PARENT, to_string(Title::PARENT).size()};
-    res.cols[Title::DEPS] = {Title::DEPS, to_string(Title::DEPS).size()};
-    res.cols[Title::DL] = {Title::DL, to_string(Title::DL).size()};
-    res.cols[Title::DESC] = {Title::DESC, to_string(Title::DESC).size()};
-    res.cols[Title::FILENAME] = {Title::FILENAME, to_string(Title::FILENAME).size()};
-    res.cols[Title::URG] = {Title::URG, to_string(Title::URG).size()};
+Width calc_width_of_desc(Table &table) {
+    return get_width_of_terminal() - table.cols[Title::ID] - 1 - table.cols[Title::PRIO] - 1 - table.cols[Title::PARENT] - 1 - table.cols[Title::DEPS] - 1 - table.cols[Title::DL] - 1 - table.cols[Title::FILENAME] - 1 - table.cols[Title::URG] - 4;
+}
+
+Table tasks_to_output_table() {
+    Table res{};
+    res.cols[Title::ID] = to_string(Title::ID).size();
+    res.cols[Title::PRIO] = to_string(Title::PRIO).size();
+    res.cols[Title::PARENT] = to_string(Title::PARENT).size();
+    res.cols[Title::DEPS] = to_string(Title::DEPS).size();
+    res.cols[Title::DL] = to_string(Title::DL).size();
+    res.cols[Title::DESC] = to_string(Title::DESC).size();
+    res.cols[Title::FILENAME] = to_string(Title::FILENAME).size();
+    res.cols[Title::URG] = to_string(Title::URG).size();
 
     for (const auto &task : tasks) {
         {
 
             long unsigned int width = std::to_string(task.id).size();
-            if (width > res.cols[Title::ID].width) {
-                res.cols[Title::ID].width = width;
+            if (width > res.cols[Title::ID]) {
+                res.cols[Title::ID] = width;
             }
         }
 
         if (Priority::NOT_SPECIFIED != task.prio) {
             long unsigned int width = to_string(task.prio).size();
-            if (width > res.cols[Title::PRIO].width) {
-                res.cols[Title::PRIO].width = width;
+            if (width > res.cols[Title::PRIO]) {
+                res.cols[Title::PRIO] = width;
             }
         }
         if (task.parent.has_value()) {
             long unsigned int width = std::to_string(task.parent.value()).size();
-            if (width > res.cols[Title::PARENT].width) {
-                res.cols[Title::PARENT].width = width;
+            if (width > res.cols[Title::PARENT]) {
+                res.cols[Title::PARENT] = width;
             }
         }
         if (task.children.size() > 0) {
@@ -351,77 +350,77 @@ Output_Table tasks_to_output_table() {
                 deps += ", ";
             }
             long unsigned int width = deps.size();
-            if (width > res.cols[Title::DEPS].width) {
-                res.cols[Title::DEPS].width = width;
+            if (width > res.cols[Title::DEPS]) {
+                res.cols[Title::DEPS] = width;
             }
         }
         if (task.has_dl) {
             long unsigned int width = std::to_string(task.dl).size();
-            if (width > res.cols[Title::DL].width) {
-                res.cols[Title::DL].width = width;
+            if (width > res.cols[Title::DL]) {
+                res.cols[Title::DL] = width;
             }
         }
         {
             long unsigned int width = task.desc.size();
-            if (width > res.cols[Title::DESC].width) {
-                res.cols[Title::DESC].width = width;
+            if (width > res.cols[Title::DESC]) {
+                res.cols[Title::DESC] = width;
             }
         }
         {            
             long unsigned int width = std::string{task.file.stem()}.size();
-            if (width > res.cols[Title::FILENAME].width) {
-                res.cols[Title::FILENAME].width = width;
+            if (width > res.cols[Title::FILENAME]) {
+                res.cols[Title::FILENAME] = width;
             }
         }
         {
             std::stringstream stream;
             stream << std::fixed << std::setprecision(1) << urgency(task);
             long unsigned int width = stream.str().size();
-            if (width > res.cols[Title::URG].width) {
-                res.cols[Title::URG].width = width;
+            if (width > res.cols[Title::URG]) {
+                res.cols[Title::URG] = width;
             }
         }
     }
     return res;
 }   
 
-void print_table(Output_Table table) {
+void print_table(Table table) {
 
-    table.cols[Title::PARENT].width = 3;
+    // table.cols[Title::PARENT] = 3;
 
-    table.cols[Title::DESC].width = get_width_of_terminal() - table.cols[Title::ID].width - 1 - table.cols[Title::PRIO].width - 1 - table.cols[Title::PARENT].width - 1 - table.cols[Title::DEPS].width - 1 - table.cols[Title::DL].width - 1 - table.cols[Title::FILENAME].width - 1 - table.cols[Title::URG].width - 4;
-
-    pad_print(to_string(Title::ID), table.cols[Title::ID].width);
+    table.cols[Title::DESC] = calc_width_of_desc(table);
+    
+    pad_print(to_string(Title::ID), table.cols[Title::ID]);
     std::cout << ' ';
-    pad_print(to_string(Title::PRIO), table.cols[Title::PRIO].width);
+    pad_print(to_string(Title::PRIO), table.cols[Title::PRIO]);
     std::cout << ' ';
-    pad_print(to_string(Title::PARENT), table.cols[Title::PARENT].width);
+    pad_print(to_string(Title::PARENT), table.cols[Title::PARENT]);
     std::cout << ' ';
-    pad_print(to_string(Title::DEPS), table.cols[Title::DEPS].width);
+    pad_print(to_string(Title::DEPS), table.cols[Title::DEPS]);
     std::cout << ' ';
-    pad_print(to_string(Title::DL), table.cols[Title::DL].width);
+    pad_print(to_string(Title::DL), table.cols[Title::DL]);
     std::cout << ' ';
-    pad_print_right(to_string(Title::DESC), table.cols[Title::DESC].width);
+    pad_print_right(to_string(Title::DESC), table.cols[Title::DESC]);
     std::cout << ' ';
-    pad_print(to_string(Title::FILENAME), table.cols[Title::FILENAME].width);    
+    pad_print(to_string(Title::FILENAME), table.cols[Title::FILENAME]);    
     std::cout << ' ';
-    pad_print(to_string(Title::URG), table.cols[Title::URG].width);    
+    pad_print(to_string(Title::URG), table.cols[Title::URG]);    
     std::cout << '\n';
 
 
     for (const auto &task : tasks) {
-        pad_print(trim_copy(std::to_string(task.id)), table.cols[Title::ID].width);
+        pad_print(trim_copy(std::to_string(task.id)), table.cols[Title::ID]);
         std::cout << ' ';
 
         if (task.prio != Priority::NOT_SPECIFIED) {
-            pad_print(std::string{to_string(task.prio)}, table.cols[Title::PRIO].width);
+            pad_print(std::string{to_string(task.prio)}, table.cols[Title::PRIO]);
         } else {
-            pad_print({}, table.cols[Title::PRIO].width);
+            pad_print({}, table.cols[Title::PRIO]);
         }
         if (task.parent.has_value()) {
-            pad_print(std::to_string(task.parent.value()), table.cols[Title::PARENT].width);
+            pad_print(std::to_string(task.parent.value()), table.cols[Title::PARENT]);
         } else {
-            pad_print({}, table.cols[Title::PARENT].width);
+            pad_print({}, table.cols[Title::PARENT]);
         }
         std::cout << ' ';
         {
@@ -435,23 +434,23 @@ void print_table(Output_Table table) {
                 deps.pop_back(); 
                 deps.pop_back();
             }
-            pad_print(deps, table.cols[Title::DEPS].width);
+            pad_print(deps, table.cols[Title::DEPS]);
         }
         std::cout << ' ';
         if (task.has_dl) {
-            pad_print(std::to_string(task.dl), table.cols[Title::DL].width);
+            pad_print(std::to_string(task.dl), table.cols[Title::DL]);
         } else {
-            pad_print({}, table.cols[Title::DL].width);
+            pad_print({}, table.cols[Title::DL]);
         }
         std::cout << ' ';
-        pad_print_right(trim_copy(task.desc), table.cols[Title::DESC].width);
+        pad_print_right(trim_copy(task.desc), table.cols[Title::DESC]);
         std::cout << ' ';
-        pad_print(trim_copy(task.file.stem()), table.cols[Title::FILENAME].width);
+        pad_print(trim_copy(task.file.stem()), table.cols[Title::FILENAME]);
         std::cout << ' ';
         {
             std::stringstream stream;
             stream << std::fixed << std::setprecision(1) << urgency(task);
-            pad_print(stream.str(), table.cols[Title::URG].width);
+            pad_print(stream.str(), table.cols[Title::URG]);
         }
         std::cout << std::endl;
     }
