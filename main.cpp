@@ -364,7 +364,7 @@ void parse_file_to_tasks(fs::path filepath) {
                     task.id = id++;
                 }
                 assert(pos % 4 == 0);
-                task.indent = pos/4; 
+                task.indent = pos/4;
                 if (task.indent != 0) {
                     task.parent = get_most_recent_id_of_given_indent(task.indent-1);
                     tasks[task.parent.value()].children.push_back(task.id);
@@ -390,9 +390,6 @@ void parse_file_to_tasks(fs::path filepath) {
 
     if (task.lines.size() > 0) {
         tasks.push_back(task);
-        task = Task{};
-        task.file = filepath;
-        task.id = id++;
     }
 }
 
@@ -407,9 +404,10 @@ void parse_dir_to_tasks(fs::path dirpath) {
 enum class Title {
     id,
     prio,
+    parent,
     deps,
     dl,
-    desc,
+    desc,   
     file,
     urg,
 };
@@ -420,6 +418,8 @@ std::string to_string(Title title) {
             return "ID";
         case Title::prio:
             return "P";
+        case Title::parent:
+            return "Par";
         case Title::deps:
             return "Deps";
         case Title::dl:
@@ -453,6 +453,7 @@ Output_Table tasks_to_output_table() {
     Output_Table res{};
     res.cols[Title::id] = Column_Of_Table{Title::id, to_string(Title::id).size()};
     res.cols[Title::prio] = Column_Of_Table{Title::prio, to_string(Title::prio).size()};
+    res.cols[Title::parent] = {Title::parent, to_string(Title::parent).size()};
     res.cols[Title::deps] = {Title::deps, to_string(Title::deps).size()};
     res.cols[Title::dl] = {Title::dl, to_string(Title::dl).size()};
     res.cols[Title::desc] = {Title::desc, to_string(Title::desc).size()};
@@ -472,6 +473,12 @@ Output_Table tasks_to_output_table() {
             long unsigned int width = to_string(task.prio).size();
             if (width > res.cols[Title::prio].width) {
                 res.cols[Title::prio].width = width;
+            }
+        }
+        if (task.parent.has_value()) {
+            long unsigned int width = std::to_string(task.parent.value()).size();
+            if (width > res.cols[Title::parent].width) {
+                res.cols[Title::parent].width = width;
             }
         }
         if (task.children.size() > 0) {
@@ -517,11 +524,15 @@ Output_Table tasks_to_output_table() {
 
 void print_table(Output_Table table) {
 
-    table.cols[Title::desc].width = get_width_of_terminal() - table.cols[Title::id].width - 1 - table.cols[Title::prio].width - 1 - table.cols[Title::deps].width - 1 - table.cols[Title::dl].width - 1 - table.cols[Title::file].width - 1 - table.cols[Title::urg].width - 4;
+    table.cols[Title::parent].width = 3;
+
+    table.cols[Title::desc].width = get_width_of_terminal() - table.cols[Title::id].width - 1 - table.cols[Title::prio].width - 1 - table.cols[Title::parent].width - 1 - table.cols[Title::deps].width - 1 - table.cols[Title::dl].width - 1 - table.cols[Title::file].width - 1 - table.cols[Title::urg].width - 4;
 
     pad_print(to_string(Title::id), table.cols[Title::id].width);
     std::cout << ' ';
     pad_print(to_string(Title::prio), table.cols[Title::prio].width);
+    std::cout << ' ';
+    pad_print(to_string(Title::parent), table.cols[Title::parent].width);
     std::cout << ' ';
     pad_print(to_string(Title::deps), table.cols[Title::deps].width);
     std::cout << ' ';
@@ -543,6 +554,11 @@ void print_table(Output_Table table) {
             pad_print(std::string{to_string(task.prio)}, table.cols[Title::prio].width);
         } else {
             pad_print({}, table.cols[Title::prio].width);
+        }
+        if (task.parent.has_value()) {
+            pad_print(std::to_string(task.parent.value()), table.cols[Title::parent].width);
+        } else {
+            pad_print({}, table.cols[Title::parent].width);
         }
         std::cout << ' ';
         {
