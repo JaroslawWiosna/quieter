@@ -104,8 +104,6 @@ bool has_prefix(std::string s, std::string prefix) {
 
 Tasks tasks;
 
-// TODO(#4): we need unittest for diff_in_days
-// ...and some static_asertion
 int diff_in_days(std::string s) {
     time_t t = time(NULL);
     // struct tm tm = *localtime(&t);
