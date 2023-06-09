@@ -26,8 +26,6 @@ using Tasks = std::vector<Task>;
 
 float urgency(Task task);
 
-Tasks tasks;
-
 int diff_in_days(std::string s);
 
 bool asc_pred(Task a, Task b);
@@ -39,10 +37,10 @@ std::optional<Day> scrap_due(std::string &s);
 void pad_print_left(std::string s, long unsigned int pad, char chr);
 void pad_print_right(std::string s, long unsigned int pad, char chr);
 void pad_print(std::string s, long unsigned int pad, char chr);
-std::optional<Id> get_most_recent_id_of_given_indent(int indent);
+std::optional<Id> get_most_recent_id_of_given_indent(const Tasks &tasks, int indent);
 int id{}; // od zera bo jestesmy programystami
-void parse_file_to_tasks(fs::path filepath);
-void parse_dir_to_tasks(fs::path dirpath);
+void parse_file_to_tasks(Tasks &tasks, fs::path filepath);
+void parse_dir_to_tasks(Tasks &tasks, fs::path dirpath);
 
 enum class Title {
     ID,

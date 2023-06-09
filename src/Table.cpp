@@ -22,7 +22,7 @@ Width calc_width_of_desc(Table &table, const Opts &opts) {
     return max - others;
 }
 
-Table tasks_to_output_table() {
+Table tasks_to_output_table(const Tasks &tasks) {
     Table res{};
     res.cols[Title::ID] = to_string(Title::ID).size();
     res.cols[Title::PRIO] = to_string(Title::PRIO).size();
@@ -95,7 +95,7 @@ Table tasks_to_output_table() {
     return res;
 }   
 
-void print_table(Table table, const Opts &opts) {
+void print_table(Table table, const Tasks &tasks, const Opts &opts) {
 
     // table.cols[Title::PARENT] = 3;
 

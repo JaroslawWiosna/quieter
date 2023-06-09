@@ -99,7 +99,7 @@ void pad_print(std::string s, long unsigned int pad, char chr = ' ') {
     pad_print_left(s, pad, chr);
 }
 
-std::optional<Id> get_most_recent_id_of_given_indent(int indent) {
+std::optional<Id> get_most_recent_id_of_given_indent(const Tasks &tasks, int indent) {
     for (auto rit = tasks.rbegin(); rit != tasks.rend(); rit++) {
         if (rit->indent == indent) {
             return rit->id;
@@ -109,7 +109,7 @@ std::optional<Id> get_most_recent_id_of_given_indent(int indent) {
     return {};
 }
 
-void parse_file_to_tasks(fs::path filepath) {
+void parse_file_to_tasks(Tasks &tasks, fs::path filepath) {
     std::ifstream databook_file{filepath};
 
     Task task{};
@@ -139,7 +139,7 @@ void parse_file_to_tasks(fs::path filepath) {
                 assert(pos % 4 == 0);
                 task.indent = pos/4;
                 if (task.indent != 0) {
-                    task.parent = get_most_recent_id_of_given_indent(task.indent-1);
+                    task.parent = get_most_recent_id_of_given_indent(tasks, task.indent-1);
                     tasks[task.parent.value()].children.push_back(task.id);
                 }
                 line = line.erase(pos, keyword_checkbox_empty.size());
@@ -166,10 +166,10 @@ void parse_file_to_tasks(fs::path filepath) {
     }
 }
 
-void parse_dir_to_tasks(fs::path dirpath) {
+void parse_dir_to_tasks(Tasks &tasks, fs::path dirpath) {
     for(const auto& entry : fs::directory_iterator(dirpath)) {
         if (fs::is_regular_file(entry)) {
-            parse_file_to_tasks(entry);
+            parse_file_to_tasks(tasks, entry);
         }
     }
 }
