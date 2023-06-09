@@ -6,7 +6,7 @@ int main(int argc, char **argv) {
     if (fs::is_regular_file(opts.path)) {
         parse_file_to_tasks(tasks, opts.path);
     } else if (fs::is_directory(opts.path)) {
-         parse_dir_to_tasks(tasks, opts.path);
+        parse_dir_to_tasks(tasks, opts.path);
     } else {
         std::cerr 
             << "Usage: " 
@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
     }
 
     //////////////////////
-    sort(tasks.begin(), tasks.end(), asc_pred);
+    sort(tasks.begin(), tasks.end(), descending);
     auto table = tasks_to_output_table(tasks);
     print_table(table, tasks, opts);
 }

@@ -28,7 +28,7 @@ float urgency(Task task);
 
 int diff_in_days(std::string s);
 
-bool asc_pred(Task a, Task b);
+bool descending(Task a, Task b);
 Priority scrap_prio(std::string &s);
 
 const std::string keyword_due{"due:"};

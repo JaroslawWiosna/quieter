@@ -42,7 +42,7 @@ int diff_in_days(std::string s) {
     return (seconds/(60.f * 60.f * 24));
 }
 
-bool asc_pred(Task a, Task b) {
+bool descending(Task a, Task b) {
     return urgency(a) > urgency(b);
 }
 
