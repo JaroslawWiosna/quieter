@@ -5,22 +5,6 @@
 #include <optional>
 #include <map>
 
-enum class Priority {
-    NOT_SPECIFIED = 0,
-    MUST,
-    SHOULD,
-    COULD,
-    WONT,
-    COUNT
-};
-static_assert(static_cast<int>(Priority::COUNT) == 5);
-
-std::string to_string(Priority p);
-float urgency_coefficient_prio(Priority p);
-float urgency_due(int days);
-
-////////////////////////////////////////////////////////////////////////
-
 using Day = int;
 using Id = int;
 using Ids = std::vector<Id>;
@@ -41,9 +25,6 @@ struct Task {
 using Tasks = std::vector<Task>;
 
 float urgency(Task task);
-
-// https://stackoverflow.com/a/22054031
-bool has_prefix(std::string s, std::string prefix);
 
 Tasks tasks;
 
@@ -77,12 +58,3 @@ enum class Title {
 std::string to_string(Title title);
 using Width = long unsigned int;
 using Columns = std::map<Title, Width>;
-
-struct Table {
-    Columns cols;
-    Width width;
-};
-
-Width calc_width_of_desc(Table &table, const Opts &opts);
-Table tasks_to_output_table();
-void print_table(Table table, const Opts &opts);

@@ -1,8 +1,4 @@
-struct Opts {
-    std::string program{}; // binary name
-    std::string path;
-    std::optional<Width> table_width_set_via_argv{};
-};
+#include "Opts.hpp"
 
 Args parse_argv(int argc, char **argv) {
     Args res{};
@@ -14,6 +10,12 @@ Args parse_argv(int argc, char **argv) {
     // }
     return res;
 }
+
+struct Opts {
+    std::string program{}; // binary name
+    std::string path;
+    std::optional<Width> table_width_set_via_argv{};
+};
 
 Opts args_to_opts(const Args &args) {
     Opts res{};

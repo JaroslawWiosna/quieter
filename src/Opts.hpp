@@ -1,7 +1,6 @@
 #pragma once
 #include <vector>
 #include <string>
-#include <optional>
 
 using Args = std::vector<std::string>;
 Args parse_argv(int argc, char **argv);
